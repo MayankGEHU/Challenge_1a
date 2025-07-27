@@ -76,15 +76,15 @@ This output feeds directly into downstream summarization, UI, or analytics tools
 ```
 .
 ├── data/
-│   ├── pdfs/          # PDFs for training
-│   └── jsons/         # Ground truth labels for training
-├── input/             # PDFs for prediction (inference)
-├── output/            # Outline JSONs for each input PDF
-├── models/            # Trained RandomForest model
-├── process_pdfs.py    # Main code (train + inference)
-├── requirements.txt   # Dependencies
-├── Dockerfile         # Containerization
-└── README.md          # This documentation
+│   ├── pdfs/                        # PDFs for training
+│   └── jsons/                       # Ground truth labels for training
+├── input/                           # PDFs for prediction (inference)
+├── output/                          # Outline JSONs for each input PDF
+├── models/                          # Trained RandomForest model
+├── process_pdfs.py                  # Main code (train + inference)
+├── requirements.txt                 # Dependencies
+├── Dockerfile                       # Containerization
+└── approach_explanation.md          # This documentation
 ```
 
 ---
@@ -103,14 +103,14 @@ This output feeds directly into downstream summarization, UI, or analytics tools
 ---
 
 ## 7. Key Features & Constraints
-- ⚡ **Fast**: ≤ 10 seconds for a 50-page PDF (on 8 CPU / 16 GB RAM)
-- 🧠 **Visual Structure Learning**: Font, layout, context—beyond regex
-- 🚀 **Lightweight**: Model size ≤ 200 MB, fully CPU, no GPU required
-- 🔁 **Reproducible**: Same input = same output, every run
-- 🔒 **Offline**: No network calls; all processing is local and secure
-- 🏆 **Multilingual Ready**: Unicode normalization for non-English scripts
-- 🧩 **Modular**: Easy retrain, feature extension, or model swap
-- 💡 **No Hardcoding**: Never rely on specific file logic—generalizes robustly
+- **Fast**: ≤ 10 seconds for a 50-page PDF (on 8 CPU / 16 GB RAM)
+- **Visual Structure Learning**: Font, layout, context—beyond regex
+- **Lightweight**: Model size ≤ 200 MB, fully CPU, no GPU required
+- **Reproducible**: Same input = same output, every run
+- **Offline**: No network calls; all processing is local and secure
+- **Multilingual Ready**: Unicode normalization for non-English scripts
+- **Modular**: Easy retrain, feature extension, or model swap
+- **No Hardcoding**: Never rely on specific file logic—generalizes robustly
 
 ---
 
