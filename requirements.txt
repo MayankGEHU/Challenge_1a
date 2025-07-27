@@ -1,0 +1,9 @@
+pymupdf
+python-crfsuite
+scikit-learn
+numpy
+pandas
+torch
+transformers
+pillow
+joblib
