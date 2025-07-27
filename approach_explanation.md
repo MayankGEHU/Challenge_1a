@@ -79,7 +79,7 @@ This output feeds directly into downstream summarization, UI, or analytics tools
 ├── input/             # PDFs for prediction (inference)
 ├── output/            # Outline JSONs for each input PDF
 ├── models/            # Trained RandomForest model
-├── process_blocks.py  # Main code (train + inference)
+├── process_pdfs.py  # Main code (train + inference)
 ├── requirements.txt   # Dependencies
 ├── Dockerfile         # Containerization
 └── README.md          # This documentation

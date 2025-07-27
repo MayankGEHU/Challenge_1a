@@ -23,4 +23,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # entrypoint runs your pipeline, which expects /app/input and /app/output
-ENTRYPOINT ["python", "run_pipeline.py"]
+ENTRYPOINT ["python", "process_pdfs.py"]
