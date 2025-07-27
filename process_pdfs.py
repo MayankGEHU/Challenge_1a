@@ -61,7 +61,8 @@ def extract_blocks(pdf_path):
     for page in doc:
         raw = page.get_text('dict')['blocks']
         for b in raw:
-            if b.get('type') != 0: continue
+            if b.get('type') != 0:
+                continue
             fb = get_block_features(b)
             if fb:
                 fb['page'] = page.number + 1
@@ -72,12 +73,15 @@ def extract_blocks(pdf_path):
 def vectorize(blocks):
     X = []
     for i, b in enumerate(blocks):
-        prev = blocks[i-1] if i > 0 else {k: 0 for k in b}
-        nxt = blocks[i+1] if i < len(blocks) - 1 else {k: 0 for k in b}
+        prev = blocks[i - 1] if i > 0 else {k: 0 for k in b}
+        nxt = blocks[i + 1] if i < len(blocks) - 1 else {k: 0 for k in b}
         vec = [
-            b['font_size'], int(b['is_bold']), b['line_count'], b['line_length'], b['pct_uppercase'], int(b['starts_pattern']),
-            prev.get('font_size', 0), int(prev.get('is_bold', False)), prev.get('line_count', 0), prev.get('line_length', 0), prev.get('pct_uppercase', 0), int(prev.get('starts_pattern', False)),
-            nxt.get('font_size', 0), int(nxt.get('is_bold', False)), nxt.get('line_count', 0), nxt.get('line_length', 0), nxt.get('pct_uppercase', 0), int(nxt.get('starts_pattern', False))
+            b['font_size'], int(b['is_bold']), b['line_count'], b['line_length'], b['pct_uppercase'],
+            int(b['starts_pattern']),
+            prev.get('font_size', 0), int(prev.get('is_bold', False)), prev.get('line_count', 0),
+            prev.get('line_length', 0), prev.get('pct_uppercase', 0), int(prev.get('starts_pattern', False)),
+            nxt.get('font_size', 0), int(nxt.get('is_bold', False)), nxt.get('line_count', 0),
+            nxt.get('line_length', 0), nxt.get('pct_uppercase', 0), int(nxt.get('starts_pattern', False))
         ]
         X.append(vec)
     return X
@@ -124,14 +128,39 @@ def generate_output(input_dir, output_dir, model_path):
                 title = b['text']
             elif label in heading_labels:
                 outline.append({'level': label, 'text': b['text'], 'page': b['page'] - 1})
+
         if not title:
             title = extract_largest_font_title(blocks)
         patched_title = patch_title_for_special_cases(title, outline, blocks)
-        outline.sort(key=lambda h: (h['page'], h['text']))
-        data = {'title': clean_title(patched_title), 'outline': outline}
+
+        # ------------------- ToC Removal Logic (Generic) -------------------
+        for h in outline:
+            h['text'] = re.sub(r'\s+\d{1,3}$', '', h['text'].strip())
+            h['norm'] = normalize_text(h['text'])
+
+        last_occurrence = {}
+        for h in outline:
+            if h['norm'] not in last_occurrence or h['page'] > last_occurrence[h['norm']]:
+                last_occurrence[h['norm']] = h['page']
+
+        final_outline = []
+        seen = set()
+        for h in outline:
+            key = (h['level'], h['norm'], h['page'])
+            if key in seen:
+                continue
+            if h['page'] == last_occurrence[h['norm']]:
+                final_outline.append({k: h[k] for k in ['level', 'text', 'page']})
+                seen.add(key)
+
+        final_outline.sort(key=lambda h: (h['page'], h['text']))
+        data = {
+            'title': clean_title(patched_title),
+            'outline': final_outline
+        }
         outp = output_dir / f"{pdf.stem}.json"
         outp.write_text(json.dumps(data, indent=2, ensure_ascii=True), encoding='utf-8')
-        print(f"Wrote {outp}: {len(outline)} headings")
+        print(f"Wrote {outp}: {len(final_outline)} headings")
 
 # ---------------------- Label Alignment ----------------------
 def align_labels(blocks, ground_truth):
