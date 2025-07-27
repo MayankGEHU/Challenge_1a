@@ -1,4 +1,6 @@
-# 📄 Document Outline Extractor: Hybrid ML Pipeline for PDF Structural Understanding
+# Challenge 1a: PDF Processing Solution
+
+## 📄 Document Outline Extractor: Hybrid ML Pipeline for PDF Structural Understanding
 
 ## Problem Statement
 Extracting a structured title and outline (H1, H2, etc.) from arbitrary PDFs is a classic **document intelligence** challenge.  
@@ -79,7 +81,7 @@ This output feeds directly into downstream summarization, UI, or analytics tools
 ├── input/             # PDFs for prediction (inference)
 ├── output/            # Outline JSONs for each input PDF
 ├── models/            # Trained RandomForest model
-├── process_pdfs.py  # Main code (train + inference)
+├── process_pdfs.py    # Main code (train + inference)
 ├── requirements.txt   # Dependencies
 ├── Dockerfile         # Containerization
 └── README.md          # This documentation
