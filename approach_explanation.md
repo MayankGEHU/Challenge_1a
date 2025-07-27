@@ -15,6 +15,9 @@ Our solution combines layout-aware machine learning with robust feature engineer
 
 ## Approach
 
+![Approach Diagram](assets/approch.jpg)
+
+
 1. **PDF Parsing:** Each PDF is divided into text blocks using **PyMuPDF**.
 2. **Feature Extraction:** For every block, features such as font size, boldness, line count, uppercase ratio, and numbered patterns are collected, along with context from neighboring blocks.
 3. **Machine Learning Classification:** These features are input to a **Random Forest** model, which predicts if each block is a `TITLE`, a heading (`H1`, `H2`, `H3`), or regular `BODY` text.
