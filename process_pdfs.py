@@ -109,7 +109,10 @@ def patch_title_for_special_cases(title, outline, blocks):
         if outline:
             return outline[0]['text']
         return extract_largest_font_title(blocks)
+    if len(outline) == 1 and normalize_text(title) == normalize_text(outline[0]['text']):
+        return ""
     return title
+
 
 # ---------------------- Output Generation ----------------------
 def generate_output(input_dir, output_dir, model_path):
@@ -127,17 +130,18 @@ def generate_output(input_dir, output_dir, model_path):
             if label == 'TITLE' and not title:
                 title = b['text']
             elif label in heading_labels:
-                outline.append({'level': label, 'text': b['text'], 'page': b['page'] - 1})
+                outline.append({ 'level': label, 'text': b['text'], 'page': b['page'] - 1})
 
         if not title:
             title = extract_largest_font_title(blocks)
         patched_title = patch_title_for_special_cases(title, outline, blocks)
 
-        # ------------------- ToC Removal Logic (Generic) -------------------
+        # ------------------- ToC Removal Logic -------------------
         for h in outline:
             h['text'] = re.sub(r'\s+\d{1,3}$', '', h['text'].strip())
             h['norm'] = normalize_text(h['text'])
 
+        # Keep only the real heading of each normalized text
         last_occurrence = {}
         for h in outline:
             if h['norm'] not in last_occurrence or h['page'] > last_occurrence[h['norm']]:
