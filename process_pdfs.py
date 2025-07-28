@@ -91,18 +91,38 @@ def extract_largest_font_title(blocks, tolerance=0.5):
     page1_blocks = [b for b in blocks if b['page'] == 1 and len(b['text'].strip()) > 5]
     if not page1_blocks:
         return ""
-    scored_blocks = sorted(
-        page1_blocks,
+    
+    # Filter noisy blocks with repeated patterns or mostly same letters
+    def is_noisy(text):
+        return bool(re.search(r'(.)\1{2,}', text.replace(' ', ''))) or len(set(text.lower())) < 5
+
+    # Remove noisy or broken blocks
+    filtered_blocks = [b for b in page1_blocks if not is_noisy(b['text'])]
+
+    if not filtered_blocks:
+        filtered_blocks = page1_blocks  # fallback
+
+    # Sort by font size, bold, uppercase %, and line length
+    sorted_blocks = sorted(
+        filtered_blocks,
         key=lambda b: (-b['font_size'], -int(b['is_bold']), -b['pct_uppercase'], -len(b['text']))
     )
-    top_font = scored_blocks[0]['font_size']
-    title_lines = [b['text'].strip() for b in scored_blocks if abs(b['font_size'] - top_font) <= tolerance]
-    seen, result = set(), []
-    for line in title_lines:
-        if line and line not in seen:
-            result.append(line)
-            seen.add(line)
-    return " ".join(result).strip()
+    
+    top_font = sorted_blocks[0]['font_size']
+    
+    # Collect lines near the top font size
+    title_lines = []
+    seen = set()
+    for b in sorted_blocks:
+        if abs(b['font_size'] - top_font) <= tolerance:
+            t = b['text'].strip()
+            if t and t not in seen:
+                title_lines.append(t)
+                seen.add(t)
+
+    # Merge lines and return cleaned
+    return " ".join(title_lines).strip()
+
 
 def patch_title_for_special_cases(title, outline, blocks):
     if not title.strip():
@@ -205,8 +225,8 @@ def train_model(pdf_dir, json_dir, model_path):
 
 # ---------------------- Main ----------------------
 if __name__ == '__main__':
-    data_pdf = Path('data/pdfs')
-    data_json = Path('data/jsons')
+    data_pdf = Path('sample_dataset/pdfs')
+    data_json = Path('sample_dataset/outputs')
     model_file = Path('models/rf_block_model.pkl')
     inp = Path('input')
     out = Path('output')
