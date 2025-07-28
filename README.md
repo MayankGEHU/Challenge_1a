@@ -1,129 +1,131 @@
 # Challenge 1a: PDF Processing Solution
 
-## Overview
-This is a **sample solution** for Challenge 1a of the Adobe India Hackathon 2025. The challenge requires implementing a PDF processing solution that extracts structured data from PDF documents and outputs JSON files. The solution must be containerized using Docker and meet specific performance and resource constraints.
+## 📄 Document Outline Extractor: Hybrid ML Pipeline for PDF Structural Understanding
 
-## Official Challenge Guidelines
+## Problem Statement
+Extracting a structured title and outline (H1, H2, etc.) from arbitrary PDFs is a classic **document intelligence** challenge.  
+Traditional rule-based logic fails on diverse real-world files—fonts, layouts, and languages change too much.
 
-### Submission Requirements
-- **GitHub Project**: Complete code repository with working solution
-- **Dockerfile**: Must be present in the root directory and functional
-- **README.md**:  Documentation explaining the solution, models, and libraries used
-
-### Build Command
-```bash
-docker build --platform linux/amd64 -t <reponame.someidentifier> .
-```
-
-### Run Command
-```bash
-docker run --rm -v $(pwd)/input:/app/input:ro -v $(pwd)/output/repoidentifier/:/app/output --network none <reponame.someidentifier>
-```
-
-### Critical Constraints
-- **Execution Time**: ≤ 10 seconds for a 50-page PDF
-- **Model Size**: ≤ 200MB (if using ML models)
-- **Network**: No internet access allowed during runtime execution
-- **Runtime**: Must run on CPU (amd64) with 8 CPUs and 16 GB RAM
-- **Architecture**: Must work on AMD64, not ARM-specific
-
-### Key Requirements
-- **Automatic Processing**: Process all PDFs from `/app/input` directory
-- **Output Format**: Generate `filename.json` for each `filename.pdf`
-- **Input Directory**: Read-only access only
-- **Open Source**: All libraries, models, and tools must be open source
-- **Cross-Platform**: Test on both simple and complex PDFs
-
-## Sample Solution Structure
-```
-Challenge_1a/
-├── sample_dataset/
-│   ├── outputs/         # JSON files provided as outputs.
-│   ├── pdfs/            # Input PDF files
-│   └── schema/          # Output schema definition
-│       └── output_schema.json
-├── Dockerfile           # Docker container configuration
-├── process_pdfs.py      # Sample processing script
-└── README.md           # This file
-```
-
-## Sample Implementation
-
-### Current Sample Solution
-The provided `process_pdfs.py` is a **basic sample** that demonstrates:
-- PDF file scanning from input directory
-- Dummy JSON data generation
-- Output file creation in the specified format
-
-**Note**: This is a placeholder implementation using dummy data. A real solution would need to:
-- Implement actual PDF text extraction
-- Parse document structure and hierarchy
-- Generate meaningful JSON output based on content analysis
-
-### Sample Processing Script (`process_pdfs.py`)
-```python
-# Current sample implementation
-def process_pdfs():
-    input_dir = Path("/app/input")
-    output_dir = Path("/app/output")
-    
-    # Process all PDF files
-    for pdf_file in input_dir.glob("*.pdf"):
-        # Generate structured JSON output
-        # (Current implementation uses dummy data)
-        output_file = output_dir / f"{pdf_file.stem}.json"
-        # Save JSON output
-```
-
-### Sample Docker Configuration
-```dockerfile
-FROM --platform=linux/amd64 python:3.10
-WORKDIR /app
-COPY process_pdfs.py .
-CMD ["python", "process_pdfs.py"]
-```
-
-## Expected Output Format
-
-### Required JSON Structure
-Each PDF should generate a corresponding JSON file that **must conform to the schema** defined in `sample_dataset/schema/output_schema.json`.
-
-
-## Implementation Guidelines
-
-### Performance Considerations
-- **Memory Management**: Efficient handling of large PDFs
-- **Processing Speed**: Optimize for sub-10-second execution
-- **Resource Usage**: Stay within 16GB RAM constraint
-- **CPU Utilization**: Efficient use of 8 CPU cores
-
-### Testing Strategy
-- **Simple PDFs**: Test with basic PDF documents
-- **Complex PDFs**: Test with multi-column layouts, images, tables
-- **Large PDFs**: Verify 50-page processing within time limit
-
-
-## Testing Your Solution
-
-### Local Testing
-```bash
-# Build the Docker image
-docker build --platform linux/amd64 -t pdf-processor .
-
-# Test with sample data
-docker run --rm -v $(pwd)/sample_dataset/pdfs:/app/input:ro -v $(pwd)/sample_dataset/outputs:/app/output --network none pdf-processor
-```
-
-### Validation Checklist
-- [ ] All PDFs in input directory are processed
-- [ ] JSON output files are generated for each PDF
-- [ ] Output format matches required structure
-- [ ] **Output conforms to schema** in `sample_dataset/schema/output_schema.json`
-- [ ] Processing completes within 10 seconds for 50-page PDFs
-- [ ] Solution works without internet access
-- [ ] Memory usage stays within 16GB limit
-- [ ] Compatible with AMD64 architecture
+Our pipeline combines layout-aware ML, robust feature engineering, and a clean output format to extract structured outlines that power search, summaries, and automation.
 
 ---
 
-**Important**: This is a sample implementation. Participants should develop their own solutions that meet all the official challenge requirements and constraints. 
+## Solution
+Our solution combines layout-aware machine learning with robust feature engineering to accurately identify document titles and headings. It uses PyMuPDF for text and layout parsing and a Random Forest classifier for block-level prediction. The output is a standardized, machine-readable JSON that captures the document’s full outline, making it usable for downstream tasks.
+
+---
+
+## Approach
+
+![Approach Diagram](assets/approch.jpg)
+
+
+1. **PDF Parsing:** Each PDF is divided into text blocks using **PyMuPDF**.
+2. **Feature Extraction:** For every block, features such as font size, boldness, line count, uppercase ratio, and numbered patterns are collected, along with context from neighboring blocks.
+3. **Machine Learning Classification:** These features are input to a **Random Forest** model, which predicts if each block is a `TITLE`, a heading (`H1`, `H2`, `H3`), or regular `BODY` text.
+4. **Outline Construction:** The detected title and all heading blocks (with page numbers) are compiled into a hierarchical outline.
+5. **Post-Processing:** Duplicate headings are removed, and special handling ensures every document gets a valid title and outline.
+6. **Output:** The final structured outline is saved as a **JSON** file, ready for downstream applications.
+
+---
+
+## How It Works
+
+### 1. Layout-Aware Feature Extraction
+Every PDF is parsed with **PyMuPDF** to extract each block of text along with its visual and typographic features:
+- **Font size** (median per block)
+- **Boldness** (any part bold/black/heavy)
+- **Line count** (multi-line headings)
+- **Uppercase ratio** (indicator for titles)
+- **Numbered/structured prefix detection** (e.g., `1.1`, `A.`, `•`, etc.)
+- **Context** from previous and next blocks
+
+### 2. Supervised Machine Learning
+Blocks are vectorized using all features and classified with a **Random Forest model** (via scikit-learn) into:
+- `TITLE`: Main document title (once per doc)
+- `H1`, `H2`, `H3`: Headings and sub-headings
+- `BODY`: Regular paragraph content
+
+### 3. Block Label Alignment & Training
+For training, block texts are matched to ground-truth headings using **normalization** and **fuzzy semantic matching**, allowing robust learning even from noisy or OCR-generated data.
+
+### 4. Outline Assembly & Title Patching
+- The first `TITLE` block (or the largest-font block) is selected as the **document title**.
+- All predicted **H\*** blocks form the outline along with their respective page numbers.
+- Results are **deduplicated**, **sorted**, and “**patched**” with fallback logic to ensure a valid output for every document.
+
+---
+
+## 4. Structured Output: Clean JSON
+Each PDF generates a machine-readable JSON file:
+
+```json
+{
+  "title": "Comprehensive AI Methods",
+  "outline": [
+    { "level": "H1", "text": "Introduction", "page": 1 },
+    { "level": "H2", "text": "Background", "page": 2 }
+  ]
+}
+```
+This output feeds directly into downstream summarization, UI, or analytics tools.
+
+---
+
+# 5. Project Structure
+```
+.
+├── data/
+│   ├── pdfs/                        # PDFs for training
+│   └── jsons/                       # Ground truth labels for training
+├── input/                           # PDFs for prediction (inference)
+├── output/                          # Outline JSONs for each input PDF
+├── models/                          # Trained RandomForest model
+├── process_pdfs.py                  # Main code (train + inference)
+├── requirements.txt                 # Dependencies
+├── Dockerfile                       # Containerization
+└── approach_explanation.md          # This documentation
+```
+
+---
+
+## 6. End-to-End Workflow
+
+### Initialize
+- If model not present, pipeline trains from `/data/pdfs` + `/data/jsons`
+- Otherwise, loads trained model from `/models/`
+
+### Process
+- All PDFs in `/input/` are block-parsed
+- Blocks vectorized, classified, and outline + title assembled
+- Results saved as `/output/yourfile.json`
+
+---
+
+## 7. Key Features & Constraints
+- **Fast**: ≤ 10 seconds for a 50-page PDF (on 8 CPU / 16 GB RAM)
+- **Visual Structure Learning**: Font, layout, context—beyond regex
+- **Lightweight**: Model size ≤ 200 MB, fully CPU, no GPU required
+- **Reproducible**: Same input = same output, every run
+- **Offline**: No network calls; all processing is local and secure
+- **Multilingual Ready**: Unicode normalization for non-English scripts
+- **Modular**: Easy retrain, feature extension, or model swap
+- **No Hardcoding**: Never rely on specific file logic—generalizes robustly
+
+---
+
+## 8. Dockerized Execution
+
+### Build Image
+```bash
+docker build --platform linux/amd64 -t challenge_1a.commit_to_win .
+```
+### Run 
+```bash
+docker run --rm -v $(pwd)/input:/app/input -v $(pwd)/output:/app/output --network none challenge_1a.commit_to_win
+```
+
+---
+
+# Conclusion
+This pipeline bridges rule-based and learning-based methods for robust, layout-agnostic outline extraction—reliable, explainable, and ready for the real world.
